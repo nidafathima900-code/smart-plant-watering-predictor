@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Plant Watering Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-top: #0d1912;
+    --bg-bot: #06100a;
+    --card: rgba(255,255,255,0.045);
+    --card-border: rgba(214,239,210,0.14);
+    --text: #eef5ea;
+    --muted: #9bb09a;
+    --gold: #d8b36a;
+    --gold-soft: #e8cd92;
+    --leaf: #6fcf7d;
+    --leaf-dark: #4a9d58;
+    --danger: #e08a6a;
+    --font-head: "Fraunces", Georgia, serif;
+    --font-body: "Inter", -apple-system, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root[data-theme="light"] {
+    --bg-top: #f4f1e8; --bg-bot: #eae4d4; --card: rgba(255,255,255,0.65);
+    --card-border: rgba(90,70,30,0.12); --text: #241f14; --muted: #6b6250;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100%;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(111,207,125,0.14), transparent 60%),
+      linear-gradient(180deg, var(--bg-top), var(--bg-bot));
+    color: var(--text);
+    font-family: var(--font-body);
+    display: flex; justify-content: center;
+    padding: 36px 16px 48px;
+  }
+  .wrap { width: 100%; max-width: 480px; }
+  .eyebrow {
+    text-align: center; letter-spacing: 0.18em; text-transform: uppercase;
+    font-size: 0.68rem; color: var(--gold-soft); font-weight: 600; margin-bottom: 10px;
+  }
+  h1 {
+    font-family: var(--font-head); font-weight: 600; font-size: 1.9rem;
+    margin: 0 0 6px; text-align: center; letter-spacing: -0.01em;
+  }
+  .sub {
+    text-align: center; color: var(--muted); font-size: 0.88rem;
+    margin-bottom: 28px; font-style: italic; font-family: var(--font-head);
+  }
+  .card {
+    background: var(--card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    padding: 26px 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .plant-stage { text-align: center; padding: 6px 0 22px; position: relative; }
+  .ring {
+    width: 128px; height: 128px; margin: 0 auto 4px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 42%, rgba(111,207,125,0.18), transparent 70%);
+    border: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: center;
+    transition: box-shadow 0.4s ease;
+  }
+  .ring.water-glow { box-shadow: 0 0 36px 6px rgba(224,138,106,0.35); border-color: rgba(224,138,106,0.5); }
+  .ring.happy-glow { box-shadow: 0 0 36px 6px rgba(111,207,125,0.35); border-color: rgba(111,207,125,0.5); }
+  .plant-emoji { font-size: 58px; display: inline-block; transition: transform 0.45s cubic-bezier(.34,1.56,.64,1); }
+  .plant-emoji.bump { animation: bump 0.5s; }
+  @keyframes bump { 0%{transform:scale(1) rotate(0)} 30%{transform:scale(1.15) rotate(-5deg)} 60%{transform:scale(0.97) rotate(3deg)} 100%{transform:scale(1) rotate(0)} }
+  .verdict {
+    text-align: center; font-family: var(--font-head); font-weight: 600;
+    font-size: 1.3rem; min-height: 1.5em; margin-top: 14px; letter-spacing: -0.01em;
+  }
+  .verdict.water { color: var(--danger); }
+  .verdict.nowater { color: var(--leaf); }
+  .verdict.idle { color: var(--muted); font-style: italic; font-size: 1.02rem; }
+  .slider-row { margin-bottom: 22px; }
+  .slider-label { display: flex; justify-content: space-between; font-size: 0.86rem; margin-bottom: 8px; color: var(--muted); }
+  .slider-label span:last-child { font-weight: 700; color: var(--gold-soft); font-family: var(--font-head); font-size: 0.95rem; }
+  input[type="range"] {
+    width: 100%; height: 4px; appearance: none; -webkit-appearance: none;
+    background: linear-gradient(90deg, var(--leaf), var(--gold) var(--fill, 50%), var(--card-border) var(--fill, 50%));
+    border-radius: 4px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold-soft);
+    border: 3px solid var(--bg-bot);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%; background: var(--gold-soft);
+    border: 3px solid var(--bg-bot); cursor: pointer;
+  }
+  button#predictBtn {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, var(--leaf), var(--leaf-dark));
+    color: #0a160c; font-size: 1rem; font-weight: 700; cursor: pointer;
+    font-family: var(--font-body);
+    box-shadow: 0 10px 24px rgba(74,157,88,0.3);
+    transition: transform 0.15s ease;
+  }
+  button#predictBtn:active { transform: scale(0.98); }
+  .score { display: flex; justify-content: space-around; text-align: center; padding: 4px; }
+  .score-item { flex: 1; }
+  .score-num { font-family: var(--font-head); font-size: 1.5rem; font-weight: 600; color: var(--gold-soft); display: block; }
+  .score-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  .divider { width: 1px; background: var(--card-border); margin: 4px 0; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+  .preset-btn {
+    flex: 1 1 auto; background: transparent; border: 1px solid var(--card-border);
+    color: var(--text); font-weight: 600; font-size: 0.76rem; padding: 10px 8px;
+    border-radius: 10px; cursor: pointer; font-family: var(--font-body);
+  }
+  .preset-btn:active { background: var(--card-border); }
+  .footer-note { text-align: center; color: var(--muted); font-size: 0.72rem; margin-top: 10px; line-height: 1.5; }
+  .footer-note b { color: var(--gold-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">AIML Mini Project · BCA Sem 5</div>
+  <h1>🌿 Smart Plant Watering Predictor</h1>
+  <div class="sub">Artificial Intelligence &amp; Machine Learning — live demo</div>
+
+  <div class="card">
+    <div class="plant-stage">
+      <div class="ring" id="ring"><div class="plant-emoji" id="plantEmoji">🌱</div></div>
+      <div class="verdict idle" id="verdict">Adjust the readings, then tap Predict</div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label"><span>💧 Soil Moisture</span><span id="soilVal">40%</span></div>
+      <input type="range" id="soil" min="5" max="80" value="40">
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span>🌡️ Temperature</span><span id="tempVal">25°C</span></div>
+      <input type="range" id="temp" min="15" max="45" value="25">
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span>💨 Humidity</span><span id="humVal">50%</span></div>
+      <input type="range" id="hum" min="20" max="90" value="50">
+    </div>
+
+    <button id="predictBtn">✦ Predict</button>
+
+    <div class="presets">
+      <button class="preset-btn" data-s="15" data-t="40" data-h="25">🔥 Hot &amp; Dry</button>
+      <button class="preset-btn" data-s="75" data-t="20" data-h="80">❄️ Cool &amp; Moist</button>
+      <button class="preset-btn" data-s="32" data-t="28" data-h="50">⚖️ Borderline</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="score">
+      <div class="score-item"><span class="score-num" id="rounds">0</span><span class="score-label">Rounds</span></div>
+      <div class="divider"></div>
+      <div class="score-item"><span class="score-num" id="waters">0</span><span class="score-label">Watered</span></div>
+    </div>
+  </div>
+
+  <div class="footer-note">Logic mirrors the <b>trained scikit-learn Decision Tree</b> from the Python project — every prediction here matches the model's exported rules.<br>Nida Fathima · Amulya B Jain · Harmain Khanum</div>
+</div>
+
+<script>
+  // Exact rules exported from the trained DecisionTreeClassifier (max_depth=4)
+  function predict(soil, temp, hum) {
+    if (soil <= 30.77) {
+      if (soil <= 25.10) {
+        if (hum <= 69.11) return 1;
+        return temp <= 20.69 ? 0 : 1;
+      } else {
+        if (hum <= 76.58) return 1;
+        return 0;
+      }
+    } else {
+      if (soil <= 34.69) {
+        if (hum <= 56.29) return temp <= 29.36 ? 0 : 1;
+        return 0;
+      } else {
+        if (temp <= 44.54) return 0;
+        return soil <= 45.17 ? 1 : 0;
+      }
+    }
+  }
+
+  const soilEl = document.getElementById('soil');
+  const tempEl = document.getElementById('temp');
+  const humEl = document.getElementById('hum');
+  const soilVal = document.getElementById('soilVal');
+  const tempVal = document.getElementById('tempVal');
+  const humVal = document.getElementById('humVal');
+  const verdict = document.getElementById('verdict');
+  const plantEmoji = document.getElementById('plantEmoji');
+  const ring = document.getElementById('ring');
+  const roundsEl = document.getElementById('rounds');
+  const watersEl = document.getElementById('waters');
+
+  let rounds = 0, waters = 0;
+
+  function fillPercent(el) {
+    const min = parseFloat(el.min), max = parseFloat(el.max), val = parseFloat(el.value);
+    return ((val - min) / (max - min)) * 100 + '%';
+  }
+  function syncLabels() {
+    soilVal.textContent = soilEl.value + '%';
+    tempVal.textContent = tempEl.value + '°C';
+    humVal.textContent = humEl.value + '%';
+    soilEl.style.setProperty('--fill', fillPercent(soilEl));
+    tempEl.style.setProperty('--fill', fillPercent(tempEl));
+    humEl.style.setProperty('--fill', fillPercent(humEl));
+  }
+  [soilEl, tempEl, humEl].forEach(el => el.addEventListener('input', syncLabels));
+  syncLabels();
+
+  function runPrediction() {
+    const soil = parseFloat(soilEl.value);
+    const temp = parseFloat(tempEl.value);
+    const hum = parseFloat(humEl.value);
+    const result = predict(soil, temp, hum);
+
+    rounds++; roundsEl.textContent = rounds;
+    if (result === 1) waters++;
+    watersEl.textContent = waters;
+
+    plantEmoji.classList.remove('bump');
+    void plantEmoji.offsetWidth;
+    plantEmoji.classList.add('bump');
+    ring.classList.remove('water-glow', 'happy-glow');
+
+    if (result === 1) {
+      plantEmoji.textContent = '🥀';
+      verdict.textContent = '💧 Water the plant';
+      verdict.className = 'verdict water';
+      ring.classList.add('water-glow');
+    } else {
+      plantEmoji.textContent = '🌳';
+      verdict.textContent = '✓ No need to water';
+      verdict.className = 'verdict nowater';
+      ring.classList.add('happy-glow');
+    }
+  }
+
+  document.getElementById('predictBtn').addEventListener('click', runPrediction);
+
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      soilEl.value = btn.dataset.s;
+      tempEl.value = btn.dataset.t;
+      humEl.value = btn.dataset.h;
+      syncLabels();
+      runPrediction();
+    });
+  });
+</script>
+</body>
+</html>
